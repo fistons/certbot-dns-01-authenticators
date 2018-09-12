@@ -7,3 +7,6 @@ ovh.conf
 *.py[cod]
 __pycache__/
 *$py.class
+
+# Visual Studio Code stuff
+.vscode/
