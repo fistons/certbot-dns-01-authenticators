@@ -67,10 +67,13 @@ response = requests.get(domain_records_href + "/_acme-challenge" + sharing_param
 if (response.ok):
     domains = response.json()
     if len(domains) == 0:
+        # Nothing to clean.
         print("Existing _acme-challenge record not found, exiting")
-        exit(1)
+        exit(0)
     if domains[0]["rrset_type"] != "TXT":
+        # It's a bit strange, let's exit with an error
         print("Existing _acme-challenge record doesn't seems to be an acme challenge, exiting")
+        exit(1)
 else:
     print("Failed to look for existing _acme-challenge record")
     response.raise_for_status()

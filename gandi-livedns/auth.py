@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import pprint
 import requests
 import os
@@ -67,8 +68,17 @@ response = requests.get(domain_records_href + "/_acme-challenge" + sharing_param
 if (response.ok):
     domains = response.json()
     if len(domains) != 0:
-        print("Existing _acme-challenge record found, exiting")
-        exit(1)
+        # DNS entry already existing. This could be because we forgot to clean older challenge
+        # or because we are challenging multiple domains. In all case, we will override the old value, 
+        # so lets delete the old one
+        print("Existing _acme-challenge record found, removing it")
+        responseDelete = requests.delete(domain_records_href + "/_acme-challenge/TXT" + sharing_param, headers=headers)
+        if (responseDelete.ok):
+            print("all good, entry deleted")
+        else:
+            print("Woops! Something failed!")
+            response.raise_for_status()
+
 else:
     print("Failed to look for existing _acme-challenge record")
     response.raise_for_status()
@@ -84,7 +94,8 @@ newrecord = {
 response = requests.post(domain_records_href + sharing_param, headers=headers, json=newrecord)
 if (response.ok):
     print("all good, entry created")
-    #pp.pprint(response.content)
+    # Let's wait 10 seconds, just in case
+    time.sleep(10)
 else:
     print("something went wrong")
     pp.pprint(response.content)
