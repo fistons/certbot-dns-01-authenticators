@@ -14,11 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
 import pprint
+import time
+
 import requests
-import os
-import json
 from config import *
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -48,7 +47,7 @@ headers = {
 
 response = requests.get(livedns_api + "domains" + sharing_param, headers=headers)
 
-if (response.ok):
+if response.ok:
     domains = response.json()
 else:
     response.raise_for_status()
@@ -56,7 +55,7 @@ else:
 
 domain_index = next((index for (index, d) in enumerate(domains) if d["fqdn"] == certbot_domain), None)
 
-if domain_index == None:
+if domain_index is None:
     # domain not found
     print("The requested domain " + certbot_domain + " was not found in this gandi account")
     exit(1)
@@ -65,15 +64,15 @@ domain_records_href = domains[domain_index]["domain_records_href"]
 
 response = requests.get(domain_records_href + "/_acme-challenge" + sharing_param, headers=headers)
 
-if (response.ok):
+if response.ok:
     domains = response.json()
     if len(domains) != 0:
         # DNS entry already existing. This could be because we forgot to clean older challenge
-        # or because we are challenging multiple domains. In all case, we will override the old value, 
-        # so lets delete the old one
+        # or because we are challenging multiple domains. In all case, we will override the old
+        # value, so lets delete the old one
         print("Existing _acme-challenge record found, removing it")
         responseDelete = requests.delete(domain_records_href + "/_acme-challenge/TXT" + sharing_param, headers=headers)
-        if (responseDelete.ok):
+        if responseDelete.ok:
             print("all good, entry deleted")
         else:
             print("Woops! Something failed!")
@@ -84,15 +83,15 @@ else:
     response.raise_for_status()
     exit(1)
 
-newrecord = {
+new_record = {
   "rrset_name": "_acme-challenge",
   "rrset_type": "TXT",
   "rrset_ttl": 300,
   "rrset_values": [certbot_validation]
 }
 
-response = requests.post(domain_records_href + sharing_param, headers=headers, json=newrecord)
-if (response.ok):
+response = requests.post(domain_records_href + sharing_param, headers=headers, json=new_record)
+if response.ok:
     print("all good, entry created")
     # Let's wait 10 seconds, just in case
     time.sleep(10)

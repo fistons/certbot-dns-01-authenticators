@@ -15,9 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pprint
+
 import requests
-import os
-import json
 from config import *
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -36,7 +35,7 @@ except NameError:
     print("CERTBOT_VALIDATION environment variable is missing, exiting")
     exit(1)
 
-if livedns_sharing_id == None:
+if livedns_sharing_id is None:
     sharing_param = ""
 else:
     sharing_param = "?sharing_id=" + livedns_sharing_id
@@ -47,7 +46,7 @@ headers = {
 
 response = requests.get(livedns_api + "domains" + sharing_param, headers=headers)
 
-if (response.ok):
+if response.ok:
     domains = response.json()
 else:
     response.raise_for_status()
@@ -55,7 +54,7 @@ else:
 
 domain_index = next((index for (index, d) in enumerate(domains) if d["fqdn"] == certbot_domain), None)
 
-if domain_index == None:
+if domain_index is None:
     # domain not found
     print("The requested domain " + certbot_domain + " was not found in this gandi account")
     exit(1)
@@ -64,7 +63,7 @@ domain_records_href = domains[domain_index]["domain_records_href"]
 
 response = requests.get(domain_records_href + "/_acme-challenge" + sharing_param, headers=headers)
 
-if (response.ok):
+if response.ok:
     domains = response.json()
     if len(domains) == 0:
         # Nothing to clean.
@@ -81,9 +80,8 @@ else:
 
 response = requests.delete(domain_records_href + "/_acme-challenge/TXT" + sharing_param, headers=headers)
 
-if (response.ok):
+if response.ok:
     print("all good, entry deleted")
-    #pp.pprint(response.content)
 else:
     print("something went wrong")
     pp.pprint(response.content)
