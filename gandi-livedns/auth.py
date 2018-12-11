@@ -64,21 +64,7 @@ domain_records_href = domains[domain_index]["domain_records_href"]
 
 response = requests.get(domain_records_href + "/_acme-challenge" + sharing_param, headers=headers)
 
-if response.ok:
-    domains = response.json()
-    if len(domains) != 0:
-        # DNS entry already existing. This could be because we forgot to clean older challenge
-        # or because we are challenging multiple domains. In all case, we will override the old
-        # value, so lets delete the old one
-        print("Existing _acme-challenge record found, removing it")
-        responseDelete = requests.delete(domain_records_href + "/_acme-challenge/TXT" + sharing_param, headers=headers)
-        if responseDelete.ok:
-            print("all good, entry deleted")
-        else:
-            print("Woops! Something failed!")
-            response.raise_for_status()
-
-else:
+if not response.ok:
     print("Failed to look for existing _acme-challenge record")
     response.raise_for_status()
     exit(1)
