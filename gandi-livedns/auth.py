@@ -69,11 +69,15 @@ if not response.ok:
     response.raise_for_status()
     exit(1)
 
+certbot_validation_array = [certbot_validation]
+for r in response.json():
+    certbot_validation_array.extend(r["rrset_values"])
+
 new_record = {
-  "rrset_name": "_acme-challenge",
-  "rrset_type": "TXT",
-  "rrset_ttl": 300,
-  "rrset_values": [certbot_validation]
+    "rrset_name": "_acme-challenge",
+    "rrset_type": "TXT",
+    "rrset_ttl": 300,
+    "rrset_values": certbot_validation_array
 }
 
 response = requests.post(domain_records_href + sharing_param, headers=headers, json=new_record)
@@ -81,6 +85,18 @@ if response.ok:
     print("all good, entry created")
     # Let's wait 10 seconds, just in case
     time.sleep(10)
+elif response.status_code == 409:
+    requests.delete(domain_records_href + "/_acme-challenge/TXT" + sharing_param, headers=headers)
+    response = requests.post(domain_records_href + sharing_param, headers=headers, json=new_record)
+    if not response.ok:
+        print("something went wrong")
+        pp.pprint(response.content)
+        response.raise_for_status()
+        exit(1)
+    else:
+        print("all good, entry created (after a retry)")
+        # Let's wait 10 seconds, just in case
+        time.sleep(10)
 else:
     print("something went wrong")
     pp.pprint(response.content)
